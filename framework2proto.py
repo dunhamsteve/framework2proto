@@ -49,9 +49,6 @@ try:
 			field,key = None,None
 			optional = "optional "
 			while True:
-				line = next(it).strip()
-				if line.startswith(b'-'):
-					break
 				line = line.decode('utf8')
 				m = re.match(r_field,line)
 				if m:
@@ -70,19 +67,24 @@ try:
 					m = re.match(r'.* ## symbol stub for: (_PBDataWriter[A-Za-z]+)',line)
 					if m:
 						assert key not in current
+						# This is subtle, but for repeated ints and doubles (from a c array)
+						# there is a incq %rbx on the next line. This doesn't catch all NSMutableArray cases.
+						line = next(it).strip()
+						if b"incq\t%rbx" in line:
+							optional = "repeated "
 						current[key] = (field,types[m.group(1)],optional)
 						dprint('XXX', typ,types[m.group(1)],field,'=',key,optional)
 						field,key = None,None
-						pass
-					elif ' countByEnumeratingWithState:objects:count:' in line:
-						optional = "repeated "
+						continue # we peeked at the next line so we skip back to the top
 					elif field:
 						dprint("STRAY",line)
 						# assert False
-					
+				line = next(it).strip()
+				if line.startswith(b'-'):
+					break	
 				#dprint(line)
-		elif re.match(b'.*isa .* _OBJC_METACLASS_\$_([A-Za-z]+)',line):
-			m = re.match(b'.*isa .* _OBJC_METACLASS_\$_([A-Za-z]+)',line)
+		elif re.match(b' *isa .* _OBJC_METACLASS_\$_([A-Za-z]+)',line):
+			m = re.match(b' *isa .* _OBJC_METACLASS_\$_([A-Za-z]+)',line)
 			typ = m.group(1).decode('utf8')
 			current = objc[typ] = {}
 			dprint('ZZZ',typ)
@@ -153,8 +155,9 @@ for k,v in sorted(schema.items()):
 		f,t,o = v2
 		if t == '-':
 			oo = objc[k]
-			t = oo[f]
+			t = oo.get(f,t)
 		if t.startswith('NS'):
+			o = 'repeated '
 			t = arrays.get((k,f),t)
 		print(f'    {o}{t} {f} = {k2};')
 	print("}\n")

@@ -22,6 +22,9 @@ r_field = r'.*\tmovq\t_OBJC_IVAR_\$_([A-Za-z]+)\._([A-Za-z]+)\('
 
 types = {
 	'_PBDataWriterWriteInt': 'int32',
+	'_PBDataWriterWriteSint': 'sint32',
+	'_PBDataWriterWriteSfixed': 'sfixed32',
+	'_PBDataWriterWriteFixed': 'fixed32',
 	'_PBDataWriterWriteStringField': 'string',
 	'_PBDataWriterWriteSubmessage': '-',
 	'_PBDataWriterWriteDataField': 'bytes',
